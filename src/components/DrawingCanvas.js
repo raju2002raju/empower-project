@@ -262,12 +262,19 @@ const DrawingCanvas = () => {
     // Generate the filename
     const fileName = `${gender}-pain-diagram.pdf`;
     
-    // Get PDF data as base64 string
-    const pdfBase64 = pdf.output('datauristring');
+    // Get raw binary PDF data
+    const pdfArrayBuffer = pdf.output('arraybuffer');
+    
+    // Convert to base64 for transport
+    const uint8Array = new Uint8Array(pdfArrayBuffer);
+    let binaryString = '';
+    uint8Array.forEach(byte => {
+      binaryString += String.fromCharCode(byte);
+    });
+    const pdfBase64 = btoa(binaryString);
     
     // Calculate file size
-    const pdfOutput = pdf.output('arraybuffer');
-    const fileSizeInBytes = pdfOutput.byteLength;
+    const fileSizeInBytes = pdfArrayBuffer.byteLength;
     const fileSizeInKB = (fileSizeInBytes / 1024).toFixed(2);
     
     try {
@@ -276,7 +283,7 @@ const DrawingCanvas = () => {
         type: 'PAIN_DIAGRAM_PDF',
         fileName: fileName,
         fileSize: fileSizeInKB,
-        fileData: pdfBase64 // Send the full base64 data
+        fileData: pdfBase64 // Send raw base64 data without data URI prefix
       };
       
       // Post message to parent window (GHL)
