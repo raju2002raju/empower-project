@@ -429,24 +429,16 @@ const DrawingCanvas = () => {
       });
     }
   
-
     
     // Generate the filename
     const fileName = `${gender}-pain-diagram.pdf`;
     
-    // Get raw binary PDF data
-    const pdfArrayBuffer = pdf.output('arraybuffer');
-    
-    // Convert to base64 for transport
-    const uint8Array = new Uint8Array(pdfArrayBuffer);
-    let binaryString = '';
-    uint8Array.forEach(byte => {
-      binaryString += String.fromCharCode(byte);
-    });
-    const pdfBase64 = btoa(binaryString);
+    // Get PDF data as base64 string
+    const pdfBase64 = pdf.output('datauristring');
     
     // Calculate file size
-    const fileSizeInBytes = pdfArrayBuffer.byteLength;
+    const pdfOutput = pdf.output('arraybuffer');
+    const fileSizeInBytes = pdfOutput.byteLength;
     const fileSizeInKB = (fileSizeInBytes / 1024).toFixed(2);
     
     try {
@@ -455,7 +447,7 @@ const DrawingCanvas = () => {
         type: 'PAIN_DIAGRAM_PDF',
         fileName: fileName,
         fileSize: fileSizeInKB,
-        fileData: pdfBase64 // Send raw base64 data without data URI prefix
+        fileData: pdfBase64 // Send the full base64 data
       };
       
       // Post message to parent window (GHL)
@@ -471,7 +463,8 @@ const DrawingCanvas = () => {
       pdf.save(fileName);
     }
   };
-  
+
+
   // Add this listener in your component's useEffect to confirm communication is working
   useEffect(() => {
     // Send a message that the iframe is ready
