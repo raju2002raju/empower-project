@@ -253,47 +253,53 @@ const DrawingCanvas = () => {
 
   const handleDownload = async () => {
     saveCurrentViewDrawings(); // Save current view
-  
+    
     const jsPDF = (await import('jspdf')).default;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [600, 912] });
-  
+    
     // [... existing PDF generation code ...]
-  
+    
     // Generate the filename
     const fileName = `${gender}-pain-diagram.pdf`;
-      
-    // Get PDF data as base64 string WITHOUT the data:application/pdf;base64, prefix
-    // This is important for GHL to handle the file properly
-    const pdfBase64 = pdf.output('datauristring').split(',')[1];
-      
+    
+    // Get PDF data as base64 string
+    const pdfBase64 = pdf.output('datauristring');
+    const pdfBinary = atob(pdfBase64.split(',')[1]);
+    
     // Calculate file size
     const pdfOutput = pdf.output('arraybuffer');
     const fileSizeInBytes = pdfOutput.byteLength;
     const fileSizeInKB = (fileSizeInBytes / 1024).toFixed(2);
-      
+    
     try {
-      // Create message data specifically formatted for GHL file upload
+      // Create a blob object from the PDF data
+      const array = new Uint8Array(pdfBinary.length);
+      for (let i = 0; i < pdfBinary.length; i++) {
+        array[i] = pdfBinary.charCodeAt(i);
+      }
+      const blob = new Blob([array], { type: 'application/pdf' });
+      
+      // Create a message suitable for GHL
       const messageData = {
-        type: 'GHL_FORM_FILE',
-        fileData: {
-          name: fileName,
-          size: fileSizeInBytes,
-          type: 'application/pdf',
-          base64: pdfBase64
-        }
+        type: 'PAIN_DIAGRAM_PDF',
+        fileName: fileName,
+        fileSize: fileSizeInKB,
+        // We can't send the Blob directly, so we'll use a different approach
+        fileUrl: URL.createObjectURL(blob)
       };
-        
+      
       // Post message to parent window (GHL)
       window.parent.postMessage(messageData, '*');
-      console.log(`Sent PDF data to GHL for file upload`);
+      console.log(`Sent PDF data to GHL with file name: ${fileName}`);
+      
+      // Also save the PDF file as normal
+      pdf.save(fileName);
       
     } catch (error) {
-      console.error('Error sending PDF data to GHL:', error);
-      alert('There was an error sending the pain diagram to the form. Please try again.');
+      console.error('Error generating PDF for GHL:', error);
+      // Fall back to just saving the PDF
+      pdf.save(fileName);
     }
-      
-    // Save the PDF file for the user as backup
-    pdf.save(fileName);
   };
   
   // Add this listener in your component's useEffect to confirm communication is working
