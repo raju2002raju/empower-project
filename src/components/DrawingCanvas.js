@@ -262,45 +262,31 @@ const DrawingCanvas = () => {
     // Generate the filename
     const fileName = `${gender}-pain-diagram.pdf`;
       
-    // Get PDF data as base64 string - keep the 'data:application/pdf;base64,' prefix
-    const pdfBase64 = pdf.output('datauristring');
+    // Get PDF data as base64 string WITHOUT the data:application/pdf;base64, prefix
+    // This is important for GHL to handle the file properly
+    const pdfBase64 = pdf.output('datauristring').split(',')[1];
       
     // Calculate file size
     const pdfOutput = pdf.output('arraybuffer');
     const fileSizeInBytes = pdfOutput.byteLength;
     const fileSizeInKB = (fileSizeInBytes / 1024).toFixed(2);
       
-    // 1. Create a message specifically formatted for Go High Level
     try {
-      // Create message data in GHL-compatible format
+      // Create message data specifically formatted for GHL file upload
       const messageData = {
-        type: 'FORM_FILE_INPUT',
-        action: 'updateFileInput',
-        fieldName: 'painDiagram', // This should match your GHL form field name
+        type: 'GHL_FORM_FILE',
         fileData: {
-          fileName: fileName,
-          fileSize: fileSizeInKB,
-          fileType: 'application/pdf',
-          fileContent: pdfBase64,
+          name: fileName,
+          size: fileSizeInBytes,
+          type: 'application/pdf',
+          base64: pdfBase64
         }
       };
         
       // Post message to parent window (GHL)
       window.parent.postMessage(messageData, '*');
-      console.log(`Sent PDF data to GHL for form field: painDiagram`);
+      console.log(`Sent PDF data to GHL for file upload`);
       
-      // 2. Also send the standard message format you already had
-      const standardMessageData = {
-        type: 'PDF_GENERATED',
-        fileName: fileName,
-        fileSize: `${fileSizeInKB} KB`,
-        pdfData: pdfBase64,
-      };
-      
-      window.parent.postMessage(standardMessageData, '*');
-      
-      // 3. Display confirmation to user
-      alert('Pain diagram has been generated and sent to the form!');
     } catch (error) {
       console.error('Error sending PDF data to GHL:', error);
       alert('There was an error sending the pain diagram to the form. Please try again.');
