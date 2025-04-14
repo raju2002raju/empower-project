@@ -264,7 +264,6 @@ const DrawingCanvas = () => {
     
     // Get PDF data as base64 string
     const pdfBase64 = pdf.output('datauristring');
-    const pdfBinary = atob(pdfBase64.split(',')[1]);
     
     // Calculate file size
     const pdfOutput = pdf.output('arraybuffer');
@@ -272,20 +271,12 @@ const DrawingCanvas = () => {
     const fileSizeInKB = (fileSizeInBytes / 1024).toFixed(2);
     
     try {
-      // Create a blob object from the PDF data
-      const array = new Uint8Array(pdfBinary.length);
-      for (let i = 0; i < pdfBinary.length; i++) {
-        array[i] = pdfBinary.charCodeAt(i);
-      }
-      const blob = new Blob([array], { type: 'application/pdf' });
-      
-      // Create a message suitable for GHL
+      // Create a message with all necessary file data
       const messageData = {
         type: 'PAIN_DIAGRAM_PDF',
         fileName: fileName,
         fileSize: fileSizeInKB,
-        // We can't send the Blob directly, so we'll use a different approach
-        fileUrl: URL.createObjectURL(blob)
+        fileData: pdfBase64 // Send the full base64 data
       };
       
       // Post message to parent window (GHL)
