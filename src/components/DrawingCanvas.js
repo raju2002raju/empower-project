@@ -157,7 +157,6 @@ const DrawingCanvas = () => {
         updatedDrawings.push(d);
       }
     }
-
     setDrawings(updatedDrawings);
   };
 
@@ -254,184 +253,81 @@ const DrawingCanvas = () => {
 
   const handleDownload = async () => {
     saveCurrentViewDrawings(); // Save current view
-
+  
     const jsPDF = (await import('jspdf')).default;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [600, 912] });
-
-    const views = [
-      'full-body',
-      'back',
-      'head-neck',
-      'upper-body',
-      'left-arm',
-      'right-arm',
-      'left-leg',
-      'right-leg',
-    ];
-
-    const viewLabels = {
-      'full-body': 'Front View',
-      'back': 'Back View',
-      'head-neck': 'Front Head & Neck',
-      'upper-body': 'Front Upper Body',
-      'left-arm': 'Left Arm',
-      'right-arm': 'Right Arm',
-      'left-leg': 'Left Leg',
-      'right-leg': 'Right Leg',
-    };
-
-    const originalGender = gender;
-    const originalView = view;
-    const results = [];
-
-    const wait = (ms) => new Promise((res) => setTimeout(res, ms));
-
-    for (const v of views) {
-      setView(v);
-      await wait(300);
-      const key = `${gender}-${v}`;
-      const stage = stageRefs.current[key];
-      if (!stage) continue;
-      stage.batchDraw();
-      await wait(300);
-      const dataURL = stage.toDataURL({ pixelRatio: 1 }); // smaller size
-      results.push({ view: v, image: dataURL });
-    }
-
-    setView(originalView);
-    setGender(originalGender);
-
-    const pageW = 600;
-    const pageH = 912;
-    const paddingX = 50;
-    const paddingY = 30;
-
-    const headerHeight = 20;
-    const headerWidth = 500;
-
-    const imgW = 225;
-    const imgH = 406;
-    const colGap = 50;
-    const rowGap = 10;
-
-    const legendW = 120;
-    const legendH = 130;
-    const legendX = (pageW - legendW) / 2;
-    const legendY = (pageH - legendH) / 2;
-
-    for (let i = 0; i < results.length; i += 4) {
-      if (i > 0) pdf.addPage();
-
-      // Header
-      pdf.setDrawColor(0);
-      pdf.rect(paddingX, paddingY, headerWidth, headerHeight);
-      pdf.setFontSize(12);
-      const today = new Date().toLocaleDateString('en-US');
-      pdf.text(`Patient Name:                                                                       Date of Birth:                                        Diagram Date: ${today}`, paddingX + 10, paddingY + 14);
-
-      // Body Figure Images with frames
-      results.slice(i, i + 4).forEach((img, idx) => {
-        const row = Math.floor(idx / 2);
-        const col = idx % 2;
+  
+    // [... existing PDF generation code ...]
+  
+    // Generate the filename
+    const fileName = `${gender}-pain-diagram.pdf`;
       
-        const x = paddingX + col * (imgW + colGap);
-        const y = paddingY + headerHeight + 10 + row * (imgH + rowGap);
+    // Get PDF data as base64 string - keep the 'data:application/pdf;base64,' prefix
+    const pdfBase64 = pdf.output('datauristring');
       
-        // 🖼 Draw frame around image
-        pdf.setDrawColor(0);
-        pdf.rect(x, y, imgW, imgH);
+    // Calculate file size
+    const pdfOutput = pdf.output('arraybuffer');
+    const fileSizeInBytes = pdfOutput.byteLength;
+    const fileSizeInKB = (fileSizeInBytes / 1024).toFixed(2);
       
-        // 🖼 Add image inside
-        pdf.addImage(img.image, 'JPEG', x, y, imgW, imgH, undefined, 'FAST');
-      
-        // 🏷 Add label inside top corner of frame
-        const labelText = viewLabels[img.view] || img.view;
-        pdf.setFontSize(14);
-        pdf.setTextColor(0, 0, 0);
-      
-        if (col === 0) {
-          // Top-left label
-          pdf.text(labelText, x + 6, y + 14);
-        } else {
-          // Top-right label
-          const textWidth = pdf.getTextWidth(labelText);
-          pdf.text(labelText, x + imgW - textWidth - 6, y + 14);
+    // 1. Create a message specifically formatted for Go High Level
+    try {
+      // Create message data in GHL-compatible format
+      const messageData = {
+        type: 'FORM_FILE_INPUT',
+        action: 'updateFileInput',
+        fieldName: 'painDiagram', // This should match your GHL form field name
+        fileData: {
+          fileName: fileName,
+          fileSize: fileSizeInKB,
+          fileType: 'application/pdf',
+          fileContent: pdfBase64,
         }
-      });
-
-      // Shape legend box
-      pdf.setDrawColor(0);
-      pdf.setFillColor(255, 255, 255);
-      pdf.rect(legendX, legendY, legendW, legendH, 'FD');
-
-      // Title centered at top of legend
-      pdf.setFontSize(14);
-      pdf.setTextColor(0);
-      pdf.text('Shape Legend', legendX + legendW / 2, legendY + 14, { align: 'center' });
-
-      let startY = legendY + 30;
-      const startX = legendX + 15;
-
-      Object.entries(shapeConfigs).forEach(([tool, config]) => {
-        pdf.setDrawColor(config.color);
-        pdf.setLineWidth(1);
-
-        switch (tool) {
-          case 'sharp-pain': {
-            // ✅ Draw equilateral triangle
-            const side = 10;
-            const height = side * Math.sqrt(3) / 2;
-            const x1 = startX;
-            const y1 = startY;
-            const x2 = x1 - side / 2;
-            const y2 = y1 + height;
-            const x3 = x1 + side / 2;
-            const y3 = y1 + height;
-
-            pdf.lines([
-              [x2 - x1, y2 - y1],
-              [x3 - x2, y3 - y2],
-              [x1 - x3, y1 - y3]
-            ], x1, y1);
-            break;
-          }
-
-          case 'dull-ache':
-            pdf.circle(startX, startY, 5, 'D');
-            break;
-
-          case 'tingling':
-            pdf.rect(startX - 5, startY - 5, 10, 10, 'D');
-            break;
-
-          case 'numbness':
-            const spikes = 5;
-            const outer = 6, inner = 3;
-            const angle = Math.PI / spikes;
-            let starPoints = [];
-            for (let i = 0; i < 2 * spikes; i++) {
-              const r = i % 2 === 0 ? outer : inner;
-              const a = i * angle - Math.PI / 2;
-              const sx = startX + r * Math.cos(a);
-              const sy = startY + r * Math.sin(a);
-              starPoints.push([sx, sy]);
-            }
-            pdf.lines(starPoints.map(([px, py], i) => {
-              const next = starPoints[(i + 1) % starPoints.length];
-              return [next[0] - px, next[1] - py];
-            }), starPoints[0][0], starPoints[0][1]);
-            break;
-        }
-
-        pdf.setFontSize(12);
-        pdf.setTextColor(0);
-        pdf.text(config.label, startX + 20, startY + 4);
-        startY += 28;
-      });
+      };
+        
+      // Post message to parent window (GHL)
+      window.parent.postMessage(messageData, '*');
+      console.log(`Sent PDF data to GHL for form field: painDiagram`);
+      
+      // 2. Also send the standard message format you already had
+      const standardMessageData = {
+        type: 'PDF_GENERATED',
+        fileName: fileName,
+        fileSize: `${fileSizeInKB} KB`,
+        pdfData: pdfBase64,
+      };
+      
+      window.parent.postMessage(standardMessageData, '*');
+      
+      // 3. Display confirmation to user
+      alert('Pain diagram has been generated and sent to the form!');
+    } catch (error) {
+      console.error('Error sending PDF data to GHL:', error);
+      alert('There was an error sending the pain diagram to the form. Please try again.');
     }
-
-    pdf.save(`${gender}-pain-diagram.pdf`);
+      
+    // Save the PDF file for the user as backup
+    pdf.save(fileName);
   };
+  
+  // Add this listener in your component's useEffect to confirm communication is working
+  useEffect(() => {
+    // Send a message that the iframe is ready
+    window.parent.postMessage({ type: 'IFRAME_READY' }, '*');
+    
+    // Optional: Listen for messages from the parent (GHL)
+    const handleMessage = (event) => {
+      // Process messages from GHL if needed
+      console.log('Received message from parent:', event.data);
+    };
+    
+    window.addEventListener('message', handleMessage);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
 
 
   useEffect(() => {
