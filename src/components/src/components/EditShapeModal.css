@@ -1,0 +1,105 @@
+.shape-edit-modal {
+    position: fixed;
+    /* ✅ Use fixed for screen center */
+    top: 200px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* width: 90vw; */
+    max-width: 320px;
+    background: white;
+    padding: 0 10px 10px 10px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+    z-index: 9999;
+    /* ✅ Make sure it's top layer */
+    display: flex;
+    flex-direction: column;
+    /* align-items: center; */
+}
+
+
+.shape-edit-label {
+    font-weight: bold;
+    font-size: 14px;
+    text-align: left;
+}
+
+.shape-edit-slider {
+    width: 100%;
+}
+
+.shape-edit-color-options {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.shape-edit-color {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.shape-edit-color.selected {
+    border: 2px solid black;
+}
+
+.shape-edit-close {
+    margin-top: 12px;
+    padding: 8px 12px;
+    border: none;
+    background: #333;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.modal-title {
+    padding-left: 70px;
+    margin-top: 10px;
+}
+
+.modal-close {
+    font-weight: bold !important;
+    width: 20px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    /* ✅ Push it to the right */
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #333;
+    padding: 4px !important;
+    height: 15px;
+}
+
+.shape-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+    height: 80px;
+}
+
+.shape-edit-title-input {
+    font-size: 14px;
+    /* font-weight: bold; */
+    text-align: center;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    margin: 0px 0 10px;
+    width: 100%;
+    max-width: 280px;
+    background: transparent;
+}
+
+.shape-edit-title-input:focus {
+    outline: none;
+    border-color: #888;
+}
