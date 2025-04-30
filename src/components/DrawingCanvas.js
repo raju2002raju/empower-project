@@ -20,6 +20,7 @@ import './EditShapeModal.css';
 const DrawingCanvas = () => {
   const [canvasHeight, setCanvasHeight] = useState(window.innerHeight);
   const [canvasWidth, setCanvasWidth] = useState(window.innerHeight / 667 * 375);
+  const [showPopup, setShowPopup] = useState(false);
 
   const [tool, setTool] = useState('pencil');
   // const [lines, setLines] = useState([]);
@@ -80,6 +81,15 @@ const DrawingCanvas = () => {
       ...prev,
       [toolKey]: { ...prev[toolKey], ...newValues }
     }));
+  };
+
+  const handleConfirm = () => {
+    setShowPopup(false);
+    handleDownload(); // Trigger your actual PDF download logic
+  };
+
+  const handleCancel = () => {
+    setShowPopup(false); // Just close the modal
   };
 
   const imageMap = {
@@ -455,7 +465,7 @@ const DrawingCanvas = () => {
       console.log(`Sent PDF data to GHL with file name: ${fileName}`);
       
       // Also save the PDF file as normal
-      pdf.save(fileName);
+      // pdf.save(fileName);
       
     } catch (error) {
       console.error('Error generating PDF for GHL:', error);
@@ -501,23 +511,6 @@ const DrawingCanvas = () => {
     }
   }, [bodyImage]);
 
-  useEffect(() => {
-    const tryFullscreen = () => {
-      const el = document.documentElement;
-
-      if (el.requestFullscreen) {
-        el.requestFullscreen().catch(() => { }); // silently fail
-      } else if (el.webkitRequestFullscreen) {
-        el.webkitRequestFullscreen();
-      } else if (el.msRequestFullscreen) {
-        el.msRequestFullscreen();
-      }
-
-      document.removeEventListener('click', tryFullscreen);
-    };
-
-    document.addEventListener('click', tryFullscreen, { once: true });
-  }, []);
 
 
   useEffect(() => {
@@ -539,11 +532,9 @@ const DrawingCanvas = () => {
     <div className="drawing-wrapper">
       {/* Top Buttons */}
       <div className="top-bar">
-        <button className="top-left">
-          <img src="/icons/more-385-128.png" alt="Shapes" className="icon-img" />
-        </button>
-        <button className="top-right" onClick={handleDownload}>
-          <img src="/icons/download.png" alt="Shapes" className="icon-img" />
+        <button className="top-right" onClick={() => setShowPopup(true)}> 
+        Generate & Attach PDF
+          {/* <img src="/icons/download.png" alt="Shapes" className="icon-img" /> */}
         </button>
       </div>
 
@@ -950,6 +941,17 @@ const DrawingCanvas = () => {
           <text className='tool-name'> Body Part </text>
         </button>
       </div>
+      {showPopup && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <p className="modal-text">Are you sure you want to attach the PDF file?  Have you marked correctly where you are feeling the pain?</p>
+            <div className="modal-buttons">
+              <button className="btn btn-yes" onClick={handleConfirm}>Yes</button>
+              <button className="btn btn-no" onClick={handleCancel}>No</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
